@@ -1,0 +1,58 @@
+Linux Checklist
+
+Users:
+cut -d: -f1 /etc/passwd
+awk -F: '$3 == 0 {print $1}' /etc/passwd
+(LOOK FOR UID 0 or /bin/bash)
+
+passwd -S username
+chage -l username
+
+
+SSH KEYS:
+find / -name authorized_keys 2>/dev/null
+cat /home/*/.ssh/authorized_keys
+cat /root/.ssh/authorized_keys
+
+sudo nano /etc/ssh/sshd_config
+CAREFUL: Check for 
+PermitRootLogin no
+PasswordAuthentication yes   # often required
+AllowUsers <expected users>
+
+then
+systemctl restart sshd
+
+CRONTABS (THEY WILL BE HERE)
+crontab -l
+for u in $(cut -f1 -d: /etc/passwd); do crontab -u $u -l 2>/dev/null; done
+ls -la /etc/cron.*
+
+systemctl list-unit-files --type=service
+systemctl list-units --state=running
+
+### STARTUP THEY WILL BE HERE
+ls -la /etc/init.d/
+ls -la /etc/rc.local
+
+
+# LOOK FOR BEACONS 
+ss -tulpn
+netstat -plant
+lsof -i
+tcpdump -n -i any
+
+
+# LOGS FOR IR TEAM
+journalctl -xe
+grep -Ei "accepted|failed|sudo|root" /var/log/auth.log
+last
+lastlog
+
+# SUID ID IN CASE
+find / -perm -4000 2>/dev/null
+find / -type f -mtime -1 2>/dev/null
+
+
+
+
