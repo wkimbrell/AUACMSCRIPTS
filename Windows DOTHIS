@@ -1,0 +1,37 @@
+USERS:
+net user
+net localgroup administrators
+
+Logins and/or Bruteforce!
+Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4624}
+Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4625}
+
+CHECK CACHE
+cmdkey /list
+
+
+SCHEDULED-TASKS (THEY WILL BE HERE)
+Get-ScheduledTask | Where State -ne "Ready"
+
+REGISTRY KEYS
+Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Run
+Get-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Run
+
+SERVICES
+Get-Service | Where Status -eq "Running"
+sc qc servicename
+
+PROCESSES AND MEMORY
+Get-Process | Sort CPU -Descending | Select -First 20
+
+NETWORK
+netstat -ano
+Get-NetTCPConnection
+
+tasklist /svc
+
+LOGS FOR IR TEAM
+Get-WinEvent -LogName System -MaxEvents 50
+Get-WinEvent -LogName Application -MaxEvents 50
+
+
