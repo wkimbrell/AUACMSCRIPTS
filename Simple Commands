@@ -1,0 +1,60 @@
+# Very simple scripts for Linux (Like as basic as I can get)
+
+# Logged-in users
+who
+w
+
+# Recent auth activity
+sudo grep -Ei "failed|accepted|session" /var/log/auth.log
+
+# Cron persistence
+for u in $(cut -f1 -d: /etc/passwd); do crontab -u $u -l 2>/dev/null; done
+
+# Suspicious services
+systemctl list-units --type=service --state=running
+
+# Network listeners
+ss -tulpn
+
+# Account audit
+cut -d: -f1 /etc/passwd
+sudo getent group sudo
+
+# IPTABLES 4 U
+iptables -P INPUT DROP
+iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+
+# BTA allow
+iptables -A OUTPUT -d 10.250.250.11 -p tcp --dport 443 -j ACCEPT
+iptables -A OUTPUT -d 169.254.169.254 -p tcp --dport 80 -j ACCEPT
+
+
+
+
+
+
+# WINDOWS POWERSHELL FUN (run as administrator!!!!)
+
+# Active sessions
+query user
+
+# Suspicious processes
+Get-Process | Sort CPU -Descending | Select -First 15
+
+# RDP logons
+Get-WinEvent -FilterHashtable @{
+ LogName='Security'; Id=4624
+} | Select TimeCreated, Message -First 20
+
+# Persistence
+Get-ScheduledTask | Where State -ne "Ready"
+
+# Account Audit
+net user
+net localgroup administrators
+
+
+
