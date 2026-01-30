@@ -8,6 +8,14 @@ awk -F: '$3 == 0 {print $1}' /etc/passwd
 passwd -S username
 chage -l username
 
+sudo adduser <username>
+sudo deluser <username>
+sudo passwd <username>
+
+getent group sudo
+sudo usermod -aG sudo <username>
+sudo deluser <username> sudo
+
 
 SSH KEYS:
 find / -name authorized_keys 2>/dev/null
@@ -23,6 +31,17 @@ AllowUsers <expected users>
 then
 systemctl restart sshd
 
+PASSWORD POLICY!!!
+sudo nano /etc/login.defs
+PASS_MAX_DAYS 90
+PASS_MIN_DAYS 5
+PASS_MIN_LEN 10
+PASS_WARN_AGE 7
+
+sudo nano /etc/pam.d/common-auth
+auth required pam_tally2.so deny=5 unlock_time=1800
+
+
 CRONTABS (THEY WILL BE HERE)
 crontab -l
 for u in $(cut -f1 -d: /etc/passwd); do crontab -u $u -l 2>/dev/null; done
@@ -35,12 +54,37 @@ systemctl list-units --state=running
 ls -la /etc/init.d/
 ls -la /etc/rc.local
 
+sudo systemctl stop <service>
+sudo systemctl disable <service>
+
 
 # LOOK FOR BEACONS 
 ss -tulpn
 netstat -plant
 lsof -i
 tcpdump -n -i any
+
+pgrep nc && kill $(pgrep nc)
+# KILL NETCAT
+
+KILL BAD GUYS
+ps aux
+ps aux | grep badguy
+pkill -f badguy
+sudo kill -9 <PID>
+
+FIND BAG GUYS IN FILES
+locate '*.mp3' | grep '/user/' | uniq
+find /home/user/dir -type f -name "*.mp3" -exec rm -f {} +
+sudo apt purge <software_name>
+
+AUDITS
+sudo auditctl -s
+sudo auditctl -e 1
+
+SMB SHARES
+sudo smbstatus
+sudo net usershare delete <sharename>
 
 
 # LOGS FOR IR TEAM
