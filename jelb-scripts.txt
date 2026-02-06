@@ -1,0 +1,196 @@
+https://github.com/wkimbrell/AUACMSCRIPTS
+
+Sysinternals Suite: Install Sysmon Configs SwiftOnSecurity, Autoruns, TCPView, Procmon, Process Explorer, Autologons
+
+netstat -tulnp     netstat -anob     netstat -anp
+
+Get-NetTCPConnection | Where-Object {$_.State -eq "Established"} | 
+    Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State, 
+    @{Name="Process";Expression={(Get-Process -Id $_.OwningProcess).ProcessName}} | 
+    Format-Table -AutoSize
+
+Get-NetTCPConnection -State Established -OwningProcess 4098 | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State, OwningProcess, CreationTime | Format-List
+
+(Get-Date) - (Get-NetTCPConnection -State Established -OwningProcess 4908 | Select-Object -ExpandProperty CreationTime)
+
+Get-NetTCPConnection | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State, OwningProcess, @{Name='Process';Expression={ $procs[[string]$_.OwningProcess].ProcessName }} | Format-Table
+
+Get-NetUDPEndpoint | Get-Member
+
+Get-Process | Where-Object { $_.Path -and $_.Path -notlike "C:\Windows\System32*" -and $_.Path -notlike "C:\Program Files*" -and $_.Path -notlike "C:\Program Files (x86)8" } | Select-Object Name, Id, Path
+
+Get-CimInstance Win32_Process -Filter "ProcessId = 4908" | Select-Object Name, ProcessId, CommandLine, ParentProcessId | Format-List
+
+Get-FileHash -Algorithm MD5 (Get-Process -Id 4098).Path
+
+# Check for recently created/modified services
+Get-WmiObject win32_service | Select-Object Name, DisplayName, PathName, 
+    @{Name="CreationDate";Expression={$_.ConvertToDateTime($_.InstallDate)}} | 
+    Sort-Object CreationDate -Descending | Select-Object -First 50
+
+$criticalServices = @('W3SVC', 'MSSQLSERVER', 'WinRM', 'DNS', ‘Kerberos’, ‘RDP’)
+while ($true) {
+    foreach ($svc in $criticalServices) {
+        $status = Get-Service -Name $svc -ErrorAction SilentlyContinue
+        if ($status.Status -ne 'Running') {
+            Write-Host "ALERT: $svc is $($status.Status)!" -ForegroundColor Red
+        }
+    }
+    Start-Sleep -Seconds 10
+}
+
+# Check common autorun locations
+$runKeys = @(
+    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run",
+    "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
+)
+
+foreach ($key in $runKeys) {
+    if (Test-Path $key) {
+        Get-ItemProperty $key | Format-List
+    }
+}
+
+function Get-TeamStatus {
+    [PSCustomObject]@{
+        Hostname = $env:COMPUTERNAME
+        OS = (Get-WmiObject Win32_OperatingSystem).Caption
+        LastBoot = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime
+        FirewallEnabled = (Get-NetFirewallProfile -Profile Domain).Enabled
+        AdminUsers = (Get-LocalGroupMember -Group "Administrators").Count
+        ActiveConnections = (Get-NetTCPConnection | Where-Object {$_.State -eq "Established"}).Count
+        RunningServices = (Get-Service | Where-Object {$_.Status -eq "Running"}).Count
+    }
+}
+Get-TeamStatus | Format-List
+
+AUTOMATION
+
+# Continuous network connection monitoring with row numbers and process paths
+$counter = 0
+while ($true) {
+    Clear-Host
+    $counter++
+    Write-Host "Scan #$counter - $(Get-Date -Format 'HH:mm:ss')" -ForegroundColor Cyan
+    Write-Host ""
+    
+    Get-NetTCPConnection | Where-Object {$_.State -eq "Established" -and $_.RemoteAddress -notmatch "^127\."} | 
+        Select-Object LocalPort, RemoteAddress, RemotePort, State, 
+            @{Name="Process";Expression={(Get-Process -Id $_.OwningProcess).ProcessName}},
+            @{Name="Path";Expression={(Get-Process -Id $_.OwningProcess).Path}} |
+        ForEach-Object -Begin { $i = 0 } -Process { 
+            $i++
+            [PSCustomObject]@{
+                '#' = $i
+                LocalPort = $_.LocalPort
+                RemoteAddress = $_.RemoteAddress
+                RemotePort = $_.RemotePort
+                State = $_.State
+                Process = $_.Process
+                Path = $_.Path
+            }
+        } |
+        Format-Table -AutoSize
+    
+    Start-Sleep -Seconds 10
+}
+
+# Log all connections to file with timestamps for forensics
+# Make sure C:\logs directory exists first!
+while ($true) {
+    Get-NetTCPConnection | Where-Object {$_.State -eq "Established"} | 
+        Select-Object @{N='Time';E={Get-Date}}, * | 
+        Export-Csv -Path "C:\logs\connections-$(Get-Date -Format 'yyyyMMdd-HHmmss').csv" -Append
+    Start-Sleep -Seconds 60
+}
+
+# Monitor critical services and alert if they stop
+$criticalServices = @('W3SVC', 'MSSQLSERVER', 'WinRM', 'DNS')
+while ($true) {
+    foreach ($svc in $criticalServices) {
+        $status = Get-Service -Name $svc -ErrorAction SilentlyContinue
+        if ($status.Status -ne 'Running') {
+            Write-Host "ALERT: $svc is $($status.Status)!" -ForegroundColor Red
+        }
+    }
+    Start-Sleep -Seconds 10
+}
+
+# Watch for new local accounts (run as admin)
+$baselineUsers = (Get-LocalUser).Name
+while ($true) {
+    $currentUsers = (Get-LocalUser).Name
+    $newUsers = Compare-Object $baselineUsers $currentUsers | Where-Object {$_.SideIndicator -eq '=>'}
+    if ($newUsers) {
+        Write-Host "NEW USER DETECTED: $($newUsers.InputObject)" -ForegroundColor Red
+    }
+    Start-Sleep -Seconds 30
+}
+
+# Monitor critical files for changes
+$files = @('C:\Windows\System32\drivers\etc\hosts', 'C:\inetpub\wwwroot\index.html')
+$hashes = @{}
+foreach ($file in $files) {
+    $hashes[$file] = (Get-FileHash $file).Hash
+}
+while ($true) {
+    foreach ($file in $files) {
+        $currentHash = (Get-FileHash $file -ErrorAction SilentlyContinue).Hash
+        if ($currentHash -ne $hashes[$file]) {
+            Write-Host "FILE MODIFIED: $file" -ForegroundColor Red
+            $hashes[$file] = $currentHash
+        }
+    }
+    Start-Sleep -Seconds 15
+}
+
+# Monitor failed login attempts (run as admin)
+while ($true) {
+    $failed = Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4625; StartTime=(Get-Date).AddMinutes(-5)} -ErrorAction SilentlyContinue
+    if ($failed) {
+        foreach ($event in $failed) {
+            Write-Host "Failed login at $(($event.TimeCreated)) from $($event.Properties[19].Value)" -ForegroundColor Yellow
+        }
+    }
+    Start-Sleep -Seconds 60
+}
+
+WAZUH SETUP
+
+curl -sO https://packages.wazuh.com/4.14/wazuh-install.sh && sudo bash ./wazuh-install.sh -a   
+sudo tar -O -xvf wazuh-install-files.tar wazuh-install-files/wazuh-passwords.txt
+
+SURICATA SETUP
+
+sudo add-apt-repository ppa:oisf/suricata-stable -y
+sudo apt update && sudo apt install suricata -y   
+
+sudo systemctl enable suricata && sudo systemctl start suricata
+
+vi /etc/suricata/suricata.yaml
+HOME_NET: "[10.250.70.0/24]"  # Replace with your network
+EXTERNAL_NET: "any"
+
+# Ensure EVE JSON logging is enabled under outputs:
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: eve.json
+      community-id: true
+      types:
+        - alert
+        - http
+        - dns
+        - tls
+        - ssh
+# Set the correct capture interface (e.g., `eth0`, `ens33`, or `enp1s0`) in the `af-packet` section.
+
+sudo nano /var/ossec/etc/ossec.conf
+<localfile>
+  <log_format>json</log_format>
+  <location>/var/log/suricata/eve.json</location>
+</localfile>
+sudo systemctl restart wazuh-agent
