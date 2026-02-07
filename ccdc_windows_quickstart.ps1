@@ -44,7 +44,45 @@ Write-Host "PHASE 1: USER MANAGEMENT" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 
 # Change password for alexisj (default credential)
-$usersToRotate = @("alexisj")
+$usersToRotate = @(
+    "alexisj"
+    "aubryimogene"
+    "bookerrudolph"
+    "ellisonjessie"
+    "fairchildestella"
+    "guehomaurice"
+    "laramiesylvester"
+    "northropbirdie"
+    "overtonbonnie"
+    "preussgwendolyn"
+    "reddinggail"
+    "sutterglenn"
+    "yorktheodore"
+    "beckerandrew"
+    "caldwelllaverne"
+    "elmsworthcecil"
+    "farnhamsam"
+    "hesslerpat"
+    "nolanfrances"
+    "nugentnell"
+    "overtonmollie"
+    "quintalfelix"
+    "reynoldslouise"
+    "vaughankarl"
+    "ashworthconstance"
+    "berrysophia"
+    "douglasskaren"
+    "estevesrudolph"
+    "foretcharley"
+    "jansenvirgil"
+    "norrissamuel"
+    "osterhausloretta"
+    "patoutann"
+    "radcliffealice"
+    "schroederoliver"
+    "yardleyherman"
+)
+
 
 foreach ($user in $usersToRotate) {
     Write-Host "Enter NEW password for $user" -ForegroundColor Cyan
