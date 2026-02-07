@@ -327,3 +327,30 @@ You did NOT lock yourself out
 
 Proceed to firewall setup ONLY after this is clean.
 
+Remove sudo from everyone except alexisj
+
+For each non-admin user:
+
+sudo deluser john sudo
+sudo deluser mary sudo
+
+
+⚠️ This does NOT delete them
+⚠️ This does NOT stop them from logging in
+
+It only removes admin power.
+
+5️⃣ Force password changes (safe + expected)
+
+You want everyone to set a new password without you knowing it.
+
+sudo passwd john
+sudo passwd mary
+
+
+Or force change on next login:
+
+sudo chage -d 0 john
+
+
+This is competition-safe.
