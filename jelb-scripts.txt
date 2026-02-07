@@ -1,5 +1,9 @@
 https://github.com/wkimbrell/AUACMSCRIPTS
 
+nmap -A -T5 10.250.70.0/24
+
+Refer -> SECCDC_2026_Windows_Service_Guide.md
+
 Sysinternals Suite: Install Sysmon Configs SwiftOnSecurity, Autoruns, TCPView, Procmon, Process Explorer, Autologons
 
 netstat -tulnp     netstat -anob     netstat -anp
