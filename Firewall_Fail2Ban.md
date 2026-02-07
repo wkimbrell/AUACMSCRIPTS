@@ -265,3 +265,65 @@ while true; do
 done
 
 ```
+
+
+
+user nots 
+Here you go — clean, discrete, copy-paste ready.
+No fluff. No explanations. Just execution.
+
+# STEP 1 — User & Privilege Control (ROOT ACCESS FIRST)
+
+## Goal
+Identify who you are, who can log in, and who can become root.
+This step is completed BEFORE any firewall changes.
+
+---
+
+## 1. Confirm Identity
+```bash
+whoami
+
+2. Secure Your Account
+passwd
+
+3. Identify Login-Capable Users
+grep -E "/bin/(bash|sh|zsh)$" /etc/passwd
+
+4. Identify Sudo / Root-Capable Users
+getent group sudo
+
+5. Review Login History
+lastlog
+
+6. Review Authentication Activity
+sudo tail -n 50 /var/log/auth.log
+
+7. Immediate Containment (Evidence-Based)
+
+Remove sudo access:
+
+sudo deluser USER sudo
+
+
+Lock account if needed:
+
+sudo passwd -l USER
+
+8. Hardening Rule
+
+Only the right people can log in.
+Only the right people can become root.
+
+STOP CHECK
+
+You know every login-capable user
+
+You know every sudo user
+
+Suspicious accounts are restricted
+
+You did NOT lock yourself out
+
+Proceed to firewall setup ONLY after this is clean.
+
