@@ -65,11 +65,44 @@ echo -e "${YELLOW}[1.1] Rotating passwords for scored/admin accounts...${NC}"
 # === ACCOUNTS TO ROTATE ===
 # Add/remove usernames here
 USERS_TO_ROTATE=(
-    alexisj
-    # webadmin
-    # dbadmin
-    # ftpuser
+    "alexisj"
+    "aubryimogene"
+    "bookerrudolph"
+    "ellisonjessie"
+    "fairchildestella"
+    "guehomaurice"
+    "laramiesylvester"
+    "northropbirdie"
+    "overtonbonnie"
+    "preussgwendolyn"
+    "reddinggail"
+    "sutterglenn"
+    "yorktheodore"
+    "beckerandrew"
+    "caldwelllaverne"
+    "elmsworthcecil"
+    "farnhamsam"
+    "hesslerpat"
+    "nolanfrances"
+    "nugentnell"
+    "overtonmollie"
+    "quintalfelix"
+    "reynoldslouise"
+    "vaughankarl"
+    "ashworthconstance"
+    "berrysophia"
+    "douglasskaren"
+    "estevesrudolph"
+    "foretcharley"
+    "jansenvirgil"
+    "norrissamuel"
+    "osterhausloretta"
+    "patoutann"
+    "radcliffealice"
+    "schroederoliver"
+    "yardleyherman"
 )
+
 
 for USER in "${USERS_TO_ROTATE[@]}"; do
     # Verify user exists
